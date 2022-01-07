@@ -10,18 +10,34 @@
 using namespace std;
 
 
-struct address_struct
+class address_class
 {
+public:
     string original ;
     string reversed ;
     string set_index_reversed ;
     int set_index_reversed_dec ;
     string tag_index_reversed ;
     bool hit ;
+    address_class(string &input_address, int &set_index_start, int &set_index_length, int &tag_index_start, int &tag_index_length) ;
 } ;
 
 
-struct cell
+address_class::address_class(string &input_address, int &set_index_start, int &set_index_length, int &tag_index_start, int &tag_index_length)
+{
+    original = input_address ;
+    reversed = input_address ;
+    reverse(reversed.begin(), reversed.end()) ;
+    
+    set_index_reversed = reversed.substr(set_index_start, set_index_length) ;
+    set_index_reversed_dec = stoi(set_index_reversed, nullptr, 2) ;
+    tag_index_reversed = reversed.substr(tag_index_start, tag_index_length) ;
+}
+
+
+
+
+struct cell_struct
 {
     string tag ;
     bool nru_bit ;
@@ -30,22 +46,75 @@ struct cell
 
 
 
-
-
 class cache_class
 {
 public:
-    vector<cell> way ;
-    vector<vector<cell>> set ;
+    vector<vector<cell_struct*>*>* set ;
+    int associativity ;
     cache_class(int associativity, int cache_sets) ;
+    void access(address_class &address) ;
+    int first1, i ;
 } ;
+
 
 cache_class::cache_class(int associativity, int cache_sets)
 {
-    cell temp_cell ;
-    vector<cell> way(associativity, temp_cell) ;
-    vector<vector<cell>> set(cache_sets, way) ;
+    this->associativity = associativity ;
+    
+    vector<vector<cell_struct*>* >* setptr = new vector<vector<cell_struct*>* > ; ;
+    this->set = setptr ;
+    
+    for (int i = 0; i < cache_sets; i++)
+    {
+        vector<cell_struct*>* way = new vector<cell_struct*> ;
+                
+        for (int j = 0; j < associativity ; j++)
+        {
+            way->push_back(new cell_struct) ;
+            way->at(j)->nru_bit = 1 ;
+        }
+        this->set->push_back(way) ;
+    }
 }
+
+
+void cache_class::access(address_class &address)
+{
+    first1 = -1 ;
+    
+    for (i=0 ; i < associativity ; i++)
+    {
+        if ( set->at(address.set_index_reversed_dec)->at(i)->tag == address.tag_index_reversed )
+        {
+            address.hit = 1 ;
+            set->at(address.set_index_reversed_dec)->at(i)->nru_bit = 0 ;
+        }
+        
+        if (first1 == -1)
+            if (set->at(address.set_index_reversed_dec)->at(i)->nru_bit == 1)
+                first1 = i ;
+    }
+
+    if (!address.hit)
+    {
+        if (first1 == -1)
+        {
+            for (i=0 ; i < associativity ; i++)
+                set->at(address.set_index_reversed_dec)->at(i)->nru_bit = 1 ;
+            
+            set->at(address.set_index_reversed_dec)->at(0)->tag = address.tag_index_reversed ;
+            set->at(address.set_index_reversed_dec)->at(0)->nru_bit = 0 ;
+        }
+        else
+        {
+            set->at(address.set_index_reversed_dec)->at(first1)->tag = address.tag_index_reversed ;
+            set->at(address.set_index_reversed_dec)->at(first1)->nru_bit = 0 ;
+        }
+    }
+    
+}
+
+
 
 
 
@@ -61,7 +130,7 @@ int main(int argc, char* argv[]){
     FILE* read_org = fopen(argv[1], "r");
     assert(read_org) ;
     
-    if (read_org)
+    //if (read_org)
     {
         fscanf(read_org, "Address_bits: %d\n"  , &address_bits) ;
         fscanf(read_org, "Block_size: %d\n"    , &block_size) ;
@@ -69,8 +138,6 @@ int main(int argc, char* argv[]){
         fscanf(read_org, "Associativity: %d\n" , &associativity) ;
         
         fclose(read_org) ;
-        
-        
     }
     
 
@@ -83,7 +150,7 @@ int main(int argc, char* argv[]){
     
     
     // for use of various indexing bit
-    /*
+    
     set<int> indexing_bits ;
     
     //default indexing bits
@@ -93,6 +160,8 @@ int main(int argc, char* argv[]){
             indexing_bits.insert(i) ;
     }
     
+    
+    /*
     set<int> tag_bits ;
     
     //default tag bits
@@ -115,14 +184,12 @@ int main(int argc, char* argv[]){
     ifstream read_lst(argv[2]) ;
     assert(read_lst) ;
     
-    vector<address_struct> address_list ;
+    vector<address_class> address_list ;
     
     if (read_lst)
     {
         getline (read_lst, lst_first_line) ;
-        
-        //cout << lst_first_line << endl ;
-        
+                
         string input_address ;
         
         while (!read_lst.eof())
@@ -135,21 +202,8 @@ int main(int argc, char* argv[]){
                 break ;
             }
             
-            address_struct current_address ;
-            current_address.original = input_address ;
-            current_address.reversed = input_address ;
-            reverse(current_address.reversed.begin(), current_address.reversed.end()) ;
-            
-            
-            
-            current_address.set_index_reversed = current_address.reversed.substr(set_index_start, set_index_length) ;
-
-            current_address.set_index_reversed_dec = stoi(current_address.set_index_reversed, nullptr, 2) ;
-            
-            current_address.tag_index_reversed = current_address.reversed.substr(tag_index_start, tag_index_length) ;
-            //cout << current_address.set_index_reversed << " " << current_address.tag_index_reversed << " " << current_address.set_index_reversed_dec << set_index_start<<  endl ;
-            
-            
+            address_class current_address(input_address, set_index_start, set_index_length, tag_index_start, tag_index_length) ;
+                        
             address_list.push_back(current_address) ;
         }
         
@@ -163,11 +217,62 @@ int main(int argc, char* argv[]){
     
     
     
+    cache_class cache(associativity, cache_sets) ;
+    
+
+    
+    
+    for (int i = 0 ; i < address_list.size() ; i++)
+    {
+        cache.access(address_list[i]) ;
+        cout << address_list[i].set_index_reversed << " " << address_list[i].tag_index_reversed << " " << address_list[i].set_index_reversed_dec  << " " << address_list[i].hit << endl ;
+    }
     
     
     
     
+    ofstream write_rpt ;
+    assert(write_rpt) ;
+    write_rpt.open(argv[3], ios::trunc) ;
     
+    if(write_rpt.is_open())
+    {
+        write_rpt << "Address bits: "  << address_bits << endl ;
+        write_rpt << "Block size: "    << block_size << endl ;
+        write_rpt << "Cache sets: "    << cache_sets << endl ;
+        write_rpt << "Associativity: " << associativity << endl << endl ;
+        
+        write_rpt << "Offset bit count: "    << block_index_length << endl ;
+        write_rpt << "Indexing bit count: "  << set_index_length << endl ;
+        write_rpt << "Indexing bits: "       ;
+        set<int>::reverse_iterator rit;
+        for (rit = indexing_bits.rbegin() ; rit != indexing_bits.rend() ; rit++)
+          write_rpt << *rit << " " ;
+        write_rpt << endl << endl ;
+        
+        write_rpt << lst_first_line << endl ;
+        string hit_or_miss ;
+        int miss_count = 0 ;
+        for (int i = 0 ; i < address_list.size() ; i++)
+        {
+            //hit_or_miss = (address_list[i].hit == 1)? "hit":"miss" ;
+            if (address_list[i].hit == 0)
+            {
+                hit_or_miss = "miss" ;
+                miss_count++ ;
+            }
+            else
+                hit_or_miss = "hit" ;
+
+            write_rpt << address_list[i].original << " " << hit_or_miss << endl ;
+        }
+        write_rpt << lst_last_line << endl << endl ;
+        
+        write_rpt << "Total cache miss count: " << miss_count ;
+        
+        write_rpt.close() ;
+        
+    }
     
     
     
