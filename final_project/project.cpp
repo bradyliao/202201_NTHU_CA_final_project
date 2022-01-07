@@ -1,13 +1,30 @@
 #include <cassert>
 #include <iostream>
 #include <fstream>
-#include <cstdio>
+//#include <cstdio>
 #include <vector>
 #include <algorithm>
 #include <cmath>
-#include <string>
+//#include <string>
 #include <set>
+#include <stdlib.h>
+#include <cstdlib>
+
+
 using namespace std;
+
+
+
+int string_to_dec(string &text, int &length)
+{
+    int dec = 0 ;
+    for (int i = 0 ; i < length ; i++)
+    {
+        dec += pow(2.0, (double)i) * (text[i]-48) ;
+    }
+    
+    return dec ;
+}
 
 
 class address_class
@@ -25,12 +42,14 @@ public:
 
 address_class::address_class(string &input_address, int &set_index_start, int &set_index_length, int &tag_index_start, int &tag_index_length)
 {
+    hit = 0 ;
     original = input_address ;
     reversed = input_address ;
     reverse(reversed.begin(), reversed.end()) ;
     
     set_index_reversed = reversed.substr(set_index_start, set_index_length) ;
-    set_index_reversed_dec = stoi(set_index_reversed, nullptr, 2) ;
+    //set_index_reversed_dec = stoi(set_index_reversed, nullptr, 2) ;
+    set_index_reversed_dec = string_to_dec(set_index_reversed, set_index_length) ;
     tag_index_reversed = reversed.substr(tag_index_start, tag_index_length) ;
 }
 
