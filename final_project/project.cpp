@@ -14,17 +14,19 @@
 using namespace std;
 
 
+#define OPTIMIZE 0
+
 
 int string_to_dec(string &text, int &length)
 {
     int dec = 0 ;
     for (int i = 0 ; i < length ; i++)
-    {
         dec += pow(2.0, (double)i) * (text[i]-48) ;
-    }
     
     return dec ;
 }
+
+
 
 
 class address_class
@@ -48,7 +50,6 @@ address_class::address_class(string &input_address, int &set_index_start, int &s
     reverse(reversed.begin(), reversed.end()) ;
     
     set_index_reversed = reversed.substr(set_index_start, set_index_length) ;
-    //set_index_reversed_dec = stoi(set_index_reversed, nullptr, 2) ;
     set_index_reversed_dec = string_to_dec(set_index_reversed, set_index_length) ;
     tag_index_reversed = reversed.substr(tag_index_start, tag_index_length) ;
 }
@@ -137,10 +138,27 @@ void cache_class::access(address_class &address)
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 int main(int argc, char* argv[]){
     
     assert(argc == 4) ;
     
+    
+    
+    
+    //read org
     int address_bits, block_size, cache_sets, associativity ;
     int block_index_length, set_index_length, tag_index_length ;
     int set_index_start /* , set_index_end */ ;
@@ -161,6 +179,8 @@ int main(int argc, char* argv[]){
     
 
     
+    
+    
     block_index_length = log2(block_size) ;
     set_index_length = log2(cache_sets) ;
     tag_index_length = address_bits - block_index_length - set_index_length ;
@@ -168,8 +188,9 @@ int main(int argc, char* argv[]){
     tag_index_start = block_index_length + set_index_length ;
     
     
-    // for use of various indexing bit
     
+    
+    // for use of various indexing bit
     set<int> indexing_bits ;
     
     //default indexing bits
@@ -195,8 +216,7 @@ int main(int argc, char* argv[]){
 
     
     
-    
-    
+    //read lst
     string lst_first_line ;
     string lst_last_line ;
     
@@ -232,24 +252,23 @@ int main(int argc, char* argv[]){
     
     
     
-    
-    
-    
-    
+    //create cache
     cache_class cache(associativity, cache_sets) ;
     
 
     
     
+    //access cache process
     for (int i = 0 ; i < address_list.size() ; i++)
     {
         cache.access(address_list[i]) ;
-        cout << address_list[i].set_index_reversed << " " << address_list[i].tag_index_reversed << " " << address_list[i].set_index_reversed_dec  << " " << address_list[i].hit << endl ;
+        //cout << address_list[i].set_index_reversed << " " << address_list[i].tag_index_reversed << " " << address_list[i].set_index_reversed_dec  << " " << address_list[i].hit << endl ;
     }
     
     
     
     
+    //write rpt
     ofstream write_rpt ;
     assert(write_rpt) ;
     write_rpt.open(argv[3], ios::trunc) ;
