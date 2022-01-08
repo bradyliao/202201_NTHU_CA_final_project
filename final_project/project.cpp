@@ -66,21 +66,14 @@ void address_class::set_tag_selection_not_optimized(int &set_index_start, int &s
 
 void address_class::set_tag_selection_optimized(int &set_index_length, set<int> &indexing_bits, int &tag_index_length, set<int>&tag_bits)
 {
-    
-    
-    
-    for (set<int>::iterator it = indexing_bits.begin() ; it != indexing_bits.end() ; it++)
-        set_index_reversed.append(&reversed[*it]) ;
+    for (set<int>::iterator it = indexing_bits.begin() ; it != indexing_bits.end() ; ++it)
+        set_index_reversed.push_back(reversed[*it]) ;
 
     set_index_reversed_dec = string_to_dec(set_index_reversed, set_index_length) ;
     
-    for (set<int>::iterator it = tag_bits.begin() ; it != tag_bits.end() ; it++)
-        tag_index_reversed.append(&reversed[*it]) ;
+    for (set<int>::iterator it = tag_bits.begin() ; it != tag_bits.end() ; ++it)
+        tag_index_reversed.push_back(reversed[*it]) ;
     
-    
-    //set_index_reversed = reversed.substr(set_index_start, set_index_length) ;
-    //set_index_reversed_dec = string_to_dec(set_index_reversed, set_index_length) ;
-    //tag_index_reversed = reversed.substr(tag_index_start, tag_index_length) ;
 }
 
 
@@ -138,15 +131,24 @@ void cache_class::access(address_class &address)
         {
             address.hit = 1 ;
             set->at(address.set_index_reversed_dec)->at(i)->nru_bit = 0 ;
+            break ;
         }
         
-        if (first1 == -1)
-            if (set->at(address.set_index_reversed_dec)->at(i)->nru_bit == 1)
-                first1 = i ;
+        //if (first1 == -1)
+        //    if (set->at(address.set_index_reversed_dec)->at(i)->nru_bit == 1)
+        //        first1 = i ;
     }
 
     if (!address.hit)
     {
+        for (i=0 ; i < associativity ; i++)
+            if (set->at(address.set_index_reversed_dec)->at(i)->nru_bit == 1)
+            {
+                first1 = i ;
+                break ;
+            }
+
+        
         if (first1 == -1)
         {
             for (i=0 ; i < associativity ; i++)
@@ -320,7 +322,25 @@ int main(int argc, char* argv[]){
             }
         }
         
+        /*
+        for (int i = 0 ; i < address_list_optimize_process.size()-associativity*cache_sets ; i++)
+        {
+            for (int j = 0; j < block_index_length; j++)
+                up_down_change_count[j] = 0 ;
+            
+            for (int j = block_index_length ; j < address_bits; j++)
+            {
+                for (int k = 0 ; k < associativity*cache_sets; k++) {
+                    if (address_list_optimize_process[i][j] != address_list_optimize_process[i+k][j])
+                    {
+                        up_down_change_count[j]++ ;
+                    }
+                }
+                
+            }
+        }
         
+        */
         
         
         
@@ -341,10 +361,10 @@ int main(int argc, char* argv[]){
                 for (int t = 0 ; t < 4; t++)
                 {
                     
-                    left_right_difference_combination_value[j][k] *= (float)left_right_difference_combination_count[j][k][t] ; // / (float)address_list_optimize_process.size() ;
+                    left_right_difference_combination_value[j][k] *= (float)left_right_difference_combination_count[j][k][t] /* / (float)address_list_optimize_process.size() */ ;
                 }
                 
-                double temp = left_right_difference_combination_value[j][k] * up_down_change_count[j] ;
+                double temp = left_right_difference_combination_value[j][k] /* * up_down_change_count[j]  */ ;
                 if (temp > optimize_value[j])
                 {
                     optimize_value[j] = temp ;
@@ -354,9 +374,6 @@ int main(int argc, char* argv[]){
         
         
         
-        for (int i = 0; i < address_bits; i++) {
-            cout << optimize_value[i] ;
-        }
         
         
         
@@ -378,6 +395,16 @@ int main(int argc, char* argv[]){
         }
         
         
+        //indexing_bits.insert(6) ;
+        //indexing_bits.insert(7) ;
+        //indexing_bits.insert(8) ;
+        //indexing_bits.insert(9) ;
+        //indexing_bits.insert(11) ;
+        
+        //for (set<int>::iterator it = indexing_bits.begin() ; it != indexing_bits.end() ; it++)
+        //    cout << *it ;
+        
+
         
 
         set<int> tag_bits ;
@@ -389,7 +416,7 @@ int main(int argc, char* argv[]){
             }
         }
         
-        
+
         
         
         
@@ -402,8 +429,6 @@ int main(int argc, char* argv[]){
         
             
     }
-    
-    
     
     
     
@@ -489,9 +514,13 @@ int main(int argc, char* argv[]){
         write_rpt << "Offset bit count: "    << block_index_length << endl ;
         write_rpt << "Indexing bit count: "  << set_index_length << endl ;
         write_rpt << "Indexing bits: "       ;
-        set<int>::reverse_iterator rit;
-        for (rit = indexing_bits.rbegin() ; rit != indexing_bits.rend() ; rit++)
+        //set<int>::reverse_iterator rit;
+        //for (rit = indexing_bits.rbegin() ; rit != indexing_bits.rend() ; rit++)
+        //  write_rpt << *rit << " " ;
+        set<int>::iterator rit;
+        for (rit = indexing_bits.begin() ; rit != indexing_bits.end() ; rit++)
           write_rpt << *rit << " " ;
+        
         write_rpt << endl << endl ;
         
         write_rpt << lst_first_line << endl ;
@@ -515,6 +544,12 @@ int main(int argc, char* argv[]){
         write_rpt << "Total cache miss count: " << miss_count ;
         
         write_rpt.close() ;
+        
+        
+        cout << miss_count << endl ;
+        for (rit = indexing_bits.begin() ; rit != indexing_bits.end() ; rit++)
+          cout << *rit << " " ;
+        cout << endl ;
         
     }
     
