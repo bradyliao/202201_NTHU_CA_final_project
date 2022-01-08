@@ -131,24 +131,14 @@ void cache_class::access(address_class &address)
         {
             address.hit = 1 ;
             set->at(address.set_index_reversed_dec)->at(i)->nru_bit = 0 ;
-            break ;
         }
         
-        //if (first1 == -1)
-        //    if (set->at(address.set_index_reversed_dec)->at(i)->nru_bit == 1)
-        //        first1 = i ;
+        if (first1 == -1)
+            if (set->at(address.set_index_reversed_dec)->at(i)->nru_bit == 1)
+                first1 = i ;
     }
-
     if (!address.hit)
     {
-        for (i=0 ; i < associativity ; i++)
-            if (set->at(address.set_index_reversed_dec)->at(i)->nru_bit == 1)
-            {
-                first1 = i ;
-                break ;
-            }
-
-        
         if (first1 == -1)
         {
             for (i=0 ; i < associativity ; i++)
