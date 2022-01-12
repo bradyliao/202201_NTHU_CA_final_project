@@ -16,6 +16,42 @@ using namespace std;
 
 #define OPTIMIZE 1
 
+/*
+void find_candidate_index_bits(vector< set<int> > &candidate_index_bits, int *Q, int **C, int address_bits, int block_index_length, int set_index_length, set<int>index_combination)
+{
+    if (index_combination.size() == set_index_length)
+    {
+        candidate_index_bits.push_back(index_combination) ;
+        return ;
+    }
+    else
+    {
+        for (int trys = 0; trys < 3; trys++)
+        {
+            float largest = 0 ;
+            int index = -1 ;
+            for (int i = block_index_length; i < address_bits; i++)
+            {
+                if(Q[i] > largest && !index_combination.count(i))
+                {
+                    largest = Q[i] ;
+                    index = i ;
+                }
+            }
+            index_combination.insert(index) ;
+            for (int i = block_index_length; i < address_bits; i++)
+            {
+                Q[i] *= C[index][i] ;
+            }
+            find_candidate_index_bits(vector< set<int> > candidate_index_bits, int *Q, int **C, int address_bits, int block_index_length, int set_index_length, set<int>index_combination)
+        }
+        
+
+    }
+}
+*/
+
+
 
 int max4 (int a, int b, int c, int d)
  {
@@ -308,6 +344,43 @@ int main(int argc, char* argv[]){
         float Q[address_bits] ;
 
         
+        int left_right_difference_combination_count[address_bits][address_bits][4] ;
+        
+        for (int j = 0; j < address_bits; j++)
+            for (int k = 0 ; k < address_bits; k++)
+            {
+                left_right_difference_combination_count[j][k][0] = 0 ;
+                left_right_difference_combination_count[j][k][1] = 0 ;
+                left_right_difference_combination_count[j][k][2] = 0 ;
+                left_right_difference_combination_count[j][k][3] = 0 ;
+            }
+        
+                
+                
+                
+        for (int i = 0 ; i < address_list_optimize_process.size() ; i++)
+        {
+            for (int j = block_index_length ; j < address_bits ; j++)
+            {
+                
+                for (int k = block_index_length ; k < address_bits ; k++)
+                {
+                    if (address_list_optimize_process[i][j] == '0' && address_list_optimize_process[i][k] == '0')
+                        left_right_difference_combination_count[j][k][0]++ ;
+                    if (address_list_optimize_process[i][j] == '0' && address_list_optimize_process[i][k] == '1')
+                        left_right_difference_combination_count[j][k][1]++ ;
+                    if (address_list_optimize_process[i][j] == '1' && address_list_optimize_process[i][k] == '0')
+                        left_right_difference_combination_count[j][k][2]++ ;
+                    if (address_list_optimize_process[i][j] == '1' && address_list_optimize_process[i][k] == '1')
+                        left_right_difference_combination_count[j][k][3]++ ;
+                }
+            }
+        }
+        
+        
+        
+        
+        
         
         
         
@@ -328,8 +401,8 @@ int main(int argc, char* argv[]){
         
         for (int i = 0; i < address_bits; i++)
             for (int j = 0 ; j < address_bits; j++)
-                C[i][j] = (float)min(E[i][j], D[i][j]) / (float)max(E[i][j], D[i][j]) ;
-        
+                //C[i][j] = (float)min(E[i][j], D[i][j]) / (float)max(E[i][j], D[i][j]) ;
+                C[i][j] = (float)min4(left_right_difference_combination_count[i][j][0], left_right_difference_combination_count[i][j][1] , left_right_difference_combination_count[i][j][2], left_right_difference_combination_count[i][j][3]) / (float)max4(left_right_difference_combination_count[i][j][0], left_right_difference_combination_count[i][j][1] , left_right_difference_combination_count[i][j][2], left_right_difference_combination_count[i][j][3]) ;
         
         
         for (int i = 0; i < address_bits; i++)
@@ -376,7 +449,9 @@ int main(int argc, char* argv[]){
         
         
         
+        //vector< set<int> > candidate_index_bits ;
         
+        //find_candidate_index_bits(&candidate_index_bits, Q, C, address_bits, block_index_length, set_index_length, set<int>index_combination) ;
 
         
         
