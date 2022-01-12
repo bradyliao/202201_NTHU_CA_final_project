@@ -16,34 +16,34 @@ using namespace std;
 
 #define OPTIMIZE 1
 
+
 int max4 (int a, int b, int c, int d)
-{
-    int max = -INFINITY ;
-    if (a > max)
-        max = a ;
-    if (b > max)
-        max = b ;
-    if (c > max)
-        max = c ;
-    if (d > max)
-        max = d ;
-    return max ;
-}
+ {
+     int max = -INFINITY ;
+     if (a > max)
+         max = a ;
+     if (b > max)
+         max = b ;
+     if (c > max)
+         max = c ;
+     if (d > max)
+         max = d ;
+     return max ;
+ }
 
-int min4 (int a, int b, int c, int d)
-{
-    int min = INFINITY ;
-    if (a < min)
-        min = a ;
-    if (b < min)
-        min = b ;
-    if (c < min)
-        min = c ;
-    if (d < min)
-        min = d ;
-    return min ;
-}
-
+ int min4 (int a, int b, int c, int d)
+ {
+     int min = INFINITY ;
+     if (a < min)
+         min = a ;
+     if (b < min)
+         min = b ;
+     if (c < min)
+         min = c ;
+     if (d < min)
+         min = d ;
+     return min ;
+ }
 
 int string_to_dec(string &text, int &length)
 {
@@ -255,6 +255,7 @@ int main(int argc, char* argv[]){
             
             address_list.push_back(current_address) ;
             address_list_optimize_process.push_back(current_address.reversed) ;
+            cout << address_list_optimize_process[address_list_optimize_process.size()-1] << endl ;
         }
         
         read_lst.close() ;
@@ -299,137 +300,85 @@ int main(int argc, char* argv[]){
         
         
     {
-        int left_right_difference_combination_count[address_bits][address_bits][4] ;
-        double left_right_difference_combination_value[address_bits][address_bits] ;
-        int up_down_change_count[address_bits] ;
-        double optimize_value[address_bits] ;
-        
-        
-        for (int j = 0; j < address_bits; j++)
-        {
-            for (int k = 0 ; k < address_bits; k++) {
-                left_right_difference_combination_count[j][k][0] = 1 ;
-                left_right_difference_combination_count[j][k][1] = 1 ;
-                left_right_difference_combination_count[j][k][2] = 1 ;
-                left_right_difference_combination_count[j][k][3] = 1 ;
-            }
-        }
+        int E[address_bits][address_bits] ;
+        int D[address_bits][address_bits] ;
+        float C[address_bits][address_bits] ;
+        int Z[address_bits] ;
+        int O[address_bits] ;
+        float Q[address_bits] ;
+
         
         
         
-        for (int i = 0 ; i < address_list_optimize_process.size() ; i++)
-        {
-            for (int j = block_index_length ; j < address_bits ; j++)
+        
+        for (int i = 0; i < address_bits; i++)
+            for (int j = 0 ; j < address_bits; j++)
             {
-                
-                for (int k = block_index_length ; k < address_bits ; k++)
-                {
-                    if (address_list_optimize_process[i][j] == '0' && address_list_optimize_process[i][k] == '0')
-                        left_right_difference_combination_count[j][k][0]++ ;
-                    if (address_list_optimize_process[i][j] == '0' && address_list_optimize_process[i][k] == '1')
-                        left_right_difference_combination_count[j][k][1]++ ;
-                    if (address_list_optimize_process[i][j] == '1' && address_list_optimize_process[i][k] == '0')
-                        left_right_difference_combination_count[j][k][2]++ ;
-                    if (address_list_optimize_process[i][j] == '1' && address_list_optimize_process[i][k] == '1')
-                        left_right_difference_combination_count[j][k][3]++ ;
-                }
+                E[i][j] = 0 ;
+                D[i][j] = 0 ;
             }
+        
+        for (int k = 0 ; k < address_list_optimize_process.size() ; k++)
+            for (int i = 0; i < address_bits; i++)
+                for (int j = 0 ; j < address_bits; j++)
+                    if (address_list_optimize_process[k][i] != address_list_optimize_process[k][j])
+                        D[i][j]++ ;
+                    else
+                        E[i][j]++ ;
+        
+        for (int i = 0; i < address_bits; i++)
+            for (int j = 0 ; j < address_bits; j++)
+                C[i][j] = (float)min(E[i][j], D[i][j]) / (float)max(E[i][j], D[i][j]) ;
+        
+        
+        
+        for (int i = 0; i < address_bits; i++)
+        {
+            Z[i] = 0 ;
+            O[i] = 0 ;
         }
         
+        for (int k = 0 ; k < address_list_optimize_process.size() ; k++)
+            for (int i = 0; i < address_bits; i++)
+                if (address_list_optimize_process[k][i] == '0')
+                    Z[i]++ ;
+                else
+                    O[i]++ ;
         
-        for (int j = block_index_length ; j < address_bits; j++)
+        for (int i = 0 ; i < address_bits; i++)
+            Q[i] = (float)min(Z[i], O[i]) / (float)max(Z[i], O[i]) ;
+        
+        
+        
+        
+        
+        while (indexing_bits.size() < set_index_length)
         {
-            for (int k = block_index_length ; k < address_bits ; k++)
+            float largest = 0 ;
+            int index = -1 ;
+            for (int i = block_index_length; i < address_bits; i++)
             {
-                left_right_difference_combination_value[j][k] =
-                (double)min4(left_right_difference_combination_count[j][k][0], left_right_difference_combination_count[j][k][1], left_right_difference_combination_count[j][k][2], left_right_difference_combination_count[j][k][3])
-                / (double)max4(left_right_difference_combination_count[j][k][0], left_right_difference_combination_count[j][k][1], left_right_difference_combination_count[j][k][2], left_right_difference_combination_count[j][k][3]) ;
-            }
-        }
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        for (int j = 0; j < address_bits; j++)
-            up_down_change_count[j] = 1 ;
-        
-        for (int i = 0 ; i < address_list_optimize_process.size()-1 ; i++)
-        {
-            
-            
-            for (int j = block_index_length ; j < address_bits; j++) {
-                if (address_list_optimize_process[i][j] != address_list_optimize_process[i+1][j])
+                if(Q[i] > largest)
                 {
-                    up_down_change_count[j]++ ;
+                    largest = Q[i] ;
+                    index = i ;
                 }
             }
+            indexing_bits.insert(index) ;
+            Q[index] = -1 ;
+            for (int i = block_index_length; i < address_bits; i++)
+            {
+                Q[i] *= C[index][i] ;
+            }
         }
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        for (int j = 0; j < block_index_length; j++)
-                    optimize_value[j] = 0 ;
-                
-                
-                for (int j = block_index_length ; j < address_bits ; j++)
-                {
-                    optimize_value[j] = 0 ;
-                    
-                    //cout <<endl << j <<' ';
-                    
-                    for (int k = block_index_length ; k < address_bits ; k++)
-                    {
-                        double temp =  (up_down_change_count[j]) * left_right_difference_combination_value[j][k]  ;
-                        if (temp > optimize_value[j])
-                        {
-                            optimize_value[j] = temp ;
-                        }
-                    }
-                    cout <<endl<< j <<' '<< up_down_change_count[j] ;
-                    cout << endl << j <<' '<< optimize_value[j] << endl ;
-                    cout << "here" ;
 
-                }
-                
-                
-                
-                
-                
-                
-                
-                for (int i = block_index_length ; i < set_index_length ; i++)
-                {
-                    double largest = 0 ;
-                    int index ;
-                    cout << "here" ;
+        
+        
+        
+        
+        
 
-                    for (int j = block_index_length ; j < address_bits ; j++)
-                    {
-                        if (optimize_value[j] > largest)
-                        {
-                            largest = optimize_value[j] ;
-                            index = j ;
-
-                        }
-                    }
-                    indexing_bits.insert(index) ;
-                    optimize_value[index] = 0 ;
-                }
+        
         
         
         
@@ -632,7 +581,6 @@ int main(int argc, char* argv[]){
     
     return 0;
 }
-
 
 
 
