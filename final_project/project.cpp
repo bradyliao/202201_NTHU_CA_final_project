@@ -227,6 +227,7 @@ int main(int argc, char* argv[]){
             
             address_list.push_back(current_address) ;
             address_list_optimize_process.push_back(current_address.reversed) ;
+            cout << address_list_optimize_process[address_list_optimize_process.size()-1] << endl ;
         }
         
         read_lst.close() ;
@@ -277,12 +278,24 @@ int main(int argc, char* argv[]){
         double optimize_value[address_bits] ;
         
         
+        for (int j = 0; j < address_bits; j++)
+        {
+            for (int k = 0 ; k < address_bits; k++) {
+                left_right_difference_combination_count[j][k][0] = 1 ;
+                left_right_difference_combination_count[j][k][1] = 1 ;
+                left_right_difference_combination_count[j][k][2] = 1 ;
+                left_right_difference_combination_count[j][k][3] = 1 ;
+            }
+        }
+        
+        
+        
         for (int i = 0 ; i < address_list_optimize_process.size() ; i++)
         {
             for (int j = block_index_length ; j < address_bits ; j++)
             {
                 
-                for (int k = j+1 ; k < address_bits ; k++)
+                for (int k = block_index_length ; k < address_bits ; k++)
                 {
                     if (address_list_optimize_process[i][j] == '0' && address_list_optimize_process[i][k] == '0')
                         left_right_difference_combination_count[j][k][0]++ ;
@@ -297,12 +310,35 @@ int main(int argc, char* argv[]){
         }
         
         
+        for (int j = block_index_length ; j < address_bits; j++)
+        {
+            for (int k = block_index_length ; k < address_bits ; k++)
+            {
+                left_right_difference_combination_value[j][k] = 1 ;
+                for (int t = 0 ; t < 4; t++)
+                {
+                    left_right_difference_combination_value[j][k] *=  (double)left_right_difference_combination_count[j][k][t] / ((double)address_list_optimize_process.size()  )  ;
+                }
+                left_right_difference_combination_value[j][k] = pow(left_right_difference_combination_value[j][k], 0.1) ;
+                cout << left_right_difference_combination_value[j][k] << " " ;
+            }
+            cout << endl ;
+        }
         
+        
+        
+        
+        
+        
+        
+        
+        
+        for (int j = 0; j < address_bits; j++)
+            up_down_change_count[j] = 1 ;
         
         for (int i = 0 ; i < address_list_optimize_process.size()-1 ; i++)
         {
-            for (int j = 0; j < block_index_length; j++)
-                up_down_change_count[j] = 0 ;
+            
             
             for (int j = block_index_length ; j < address_bits; j++) {
                 if (address_list_optimize_process[i][j] != address_list_optimize_process[i+1][j])
@@ -345,21 +381,21 @@ int main(int argc, char* argv[]){
         {
             optimize_value[j] = 0 ;
             
+            //cout <<endl << j <<' ';
+            
             for (int k = j+1 ; k < address_bits ; k++)
             {
-                left_right_difference_combination_value[j][k] = 1 ;
-                for (int t = 0 ; t < 4; t++)
-                {
-                    
-                    left_right_difference_combination_value[j][k] *= (float)left_right_difference_combination_count[j][k][t] /* / (float)address_list_optimize_process.size() */ ;
-                }
                 
-                double temp = left_right_difference_combination_value[j][k] /* * up_down_change_count[j]  */ ;
+                
+                
+                double temp =  (up_down_change_count[j]) * left_right_difference_combination_value[j][k]  ;
                 if (temp > optimize_value[j])
                 {
                     optimize_value[j] = temp ;
                 }
             }
+            cout <<endl<< j <<' '<< up_down_change_count[j] ;
+            cout << endl << j <<' '<< optimize_value[j] << endl ;
         }
         
         
@@ -380,7 +416,8 @@ int main(int argc, char* argv[]){
                     index = j ;
                 }
             }
-            indexing_bits.insert(index) ;
+            //if (i%3==0)
+                indexing_bits.insert(index) ;
             optimize_value[index] = 0 ;
         }
         
