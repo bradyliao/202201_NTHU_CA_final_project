@@ -591,37 +591,6 @@ int main(int argc, char* argv[]){
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     //create cache
     cache_class cache(associativity, cache_sets) ;
     
@@ -694,17 +663,3 @@ int main(int argc, char* argv[]){
     
     return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
