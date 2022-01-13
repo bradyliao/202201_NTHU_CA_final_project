@@ -13,73 +13,11 @@
 
 using namespace std;
 
-
+#define BASIC 0
 #define OPTIMIZE 1
+#define EXHAUSTIVE 1 // OPTIMIZE has to = 1
+#define MANUAL 0
 
-/*
-void find_candidate_index_bits(vector< set<int> > &candidate_index_bits, int *Q, int **C, int address_bits, int block_index_length, int set_index_length, set<int>index_combination)
-{
-    if (index_combination.size() == set_index_length)
-    {
-        candidate_index_bits.push_back(index_combination) ;
-        return ;
-    }
-    else
-    {
-        for (int trys = 0; trys < 3; trys++)
-        {
-            float largest = 0 ;
-            int index = -1 ;
-            for (int i = block_index_length; i < address_bits; i++)
-            {
-                if(Q[i] > largest && !index_combination.count(i))
-                {
-                    largest = Q[i] ;
-                    index = i ;
-                }
-            }
-            index_combination.insert(index) ;
-            for (int i = block_index_length; i < address_bits; i++)
-            {
-                Q[i] *= C[index][i] ;
-            }
-            find_candidate_index_bits(vector< set<int> > candidate_index_bits, int *Q, int **C, int address_bits, int block_index_length, int set_index_length, set<int>index_combination)
-        }
-        
-
-    }
-}
-*/
-
-
-
-int max4 (int a, int b, int c, int d)
- {
-     int max = -INFINITY ;
-     if (a > max)
-         max = a ;
-     if (b > max)
-         max = b ;
-     if (c > max)
-         max = c ;
-     if (d > max)
-         max = d ;
-     return max ;
- }
-
- int min4 (int a, int b, int c, int d)
- {
-     int min = INFINITY ;
-     if (a < min)
-         min = a ;
-     if (b < min)
-         min = b ;
-     if (c < min)
-         min = c ;
-     if (d < min)
-         min = d ;
-     return min ;
- }
 
 int string_to_dec(string &text, int &length)
 {
@@ -103,6 +41,7 @@ public:
     string tag_index_reversed ;
     bool hit ;
     address_class(string &input_address) ;
+    void reset() ;
     void set_tag_selection_not_optimized(int &set_index_start, int &set_index_length, int &tag_index_start, int &tag_index_length) ;
     void set_tag_selection_optimized(int &set_index_length, set<int> &indexing_bits, int &tag_index_length, set<int>&tag_bits) ;
 
@@ -142,6 +81,15 @@ void address_class::set_tag_selection_optimized(int &set_index_length, set<int> 
 
 
 
+void address_class::reset()
+{
+    hit = 0 ;
+    set_index_reversed = "" ;
+    set_index_reversed_dec = 0 ;
+    tag_index_reversed = "" ;
+}
+
+
 
 
 struct cell_struct
@@ -158,9 +106,10 @@ class cache_class
 public:
     vector<vector<cell_struct*>*>* set ;
     int associativity ;
+    int cache_sets ;
     cache_class(int associativity, int cache_sets) ;
-    void access(address_class &address) ;
-    int first1, i ;
+    bool access(address_class &address) ;
+    void reset() ;
 } ;
 
 
@@ -185,11 +134,14 @@ cache_class::cache_class(int associativity, int cache_sets)
 }
 
 
-void cache_class::access(address_class &address)
+
+
+
+bool cache_class::access(address_class &address)
 {
-    first1 = -1 ;
+    int first1 = -1 ;
     
-    for (i=0 ; i < associativity ; i++)
+    for (int i = 0 ; i < associativity ; i++)
     {
         if ( set->at(address.set_index_reversed_dec)->at(i)->tag == address.tag_index_reversed )
         {
@@ -205,7 +157,7 @@ void cache_class::access(address_class &address)
     {
         if (first1 == -1)
         {
-            for (i=0 ; i < associativity ; i++)
+            for (int i = 0 ; i < associativity ; i++)
                 set->at(address.set_index_reversed_dec)->at(i)->nru_bit = 1 ;
             
             set->at(address.set_index_reversed_dec)->at(0)->tag = address.tag_index_reversed ;
@@ -218,9 +170,21 @@ void cache_class::access(address_class &address)
         }
     }
     
+    return address.hit ;
 }
 
 
+void cache_class::reset()
+{
+    for (int i = 0; i < set->size(); i++)
+    {
+        for (int j = 0; j < set->at(i)->size(); j++)
+        {
+            set->at(i)->at(j)->nru_bit = 1;
+            set->at(i)->at(j)->tag = "";
+        }
+    }
+}
 
 
 
@@ -234,7 +198,7 @@ void cache_class::access(address_class &address)
 int main(int argc, char* argv[]){
     
     assert(argc == 4) ;
-    
+
     
     
     
@@ -291,7 +255,6 @@ int main(int argc, char* argv[]){
             
             address_list.push_back(current_address) ;
             address_list_optimize_process.push_back(current_address.reversed) ;
-            //cout << address_list_optimize_process[address_list_optimize_process.size()-1] << endl ;
         }
         
         read_lst.close() ;
@@ -312,9 +275,9 @@ int main(int argc, char* argv[]){
     // for use of various indexing bit
     set<int> indexing_bits ;
     
+
     
-    
-    if (!OPTIMIZE)
+    if (BASIC)
     {
         //default indexing bits
         for(int i = 0 ; i < address_bits ; i++)
@@ -327,23 +290,23 @@ int main(int argc, char* argv[]){
         tag_index_start = block_index_length + set_index_length ;
         
         for (int i = 0; i < address_list.size(); i++)
-        {
             address_list[i].set_tag_selection_not_optimized(set_index_start, set_index_length, tag_index_start, tag_index_length) ;
-        }
+
     }
-    else
-        
-        
-        
+    
+    
+    
+    if (OPTIMIZE)
     {
-        int E[address_bits][address_bits] ;
-        int D[address_bits][address_bits] ;
+
         float C[address_bits][address_bits] ;
         int Z[address_bits] ;
         int O[address_bits] ;
         float Q[address_bits] ;
 
         
+        
+        //Correlation table
         int left_right_difference_combination_count[address_bits][address_bits][4] ;
         
         for (int j = 0; j < address_bits; j++)
@@ -355,14 +318,11 @@ int main(int argc, char* argv[]){
                 left_right_difference_combination_count[j][k][3] = 0 ;
             }
         
-                
-                
-                
+                                
         for (int i = 0 ; i < address_list_optimize_process.size() ; i++)
         {
             for (int j = block_index_length ; j < address_bits ; j++)
             {
-                
                 for (int k = block_index_length ; k < address_bits ; k++)
                 {
                     if (address_list_optimize_process[i][j] == '0' && address_list_optimize_process[i][k] == '0')
@@ -377,31 +337,10 @@ int main(int argc, char* argv[]){
             }
         }
         
-        
-        
-        
-        
-        
-        
-        
-        for (int i = 0; i < address_bits; i++)
-            for (int j = 0 ; j < address_bits; j++)
-            {
-                E[i][j] = 0 ;
-                D[i][j] = 0 ;
-            }
-        
-        for (int k = 0 ; k < address_list_optimize_process.size() ; k++)
-            for (int i = block_index_length; i < address_bits; i++)
-                for (int j = block_index_length ; j < address_bits; j++)
-                    if (address_list_optimize_process[k][i] != address_list_optimize_process[k][j])
-                        D[i][j]++ ;
-                    else
-                        E[i][j]++ ;
+
         
         for (int i = 0; i < address_bits; i++)
         {
-            printf("%2d ", i) ;
             for (int j = 0 ; j < address_bits; j++)
             {
                 vector<int> min_to_max ;
@@ -411,18 +350,11 @@ int main(int argc, char* argv[]){
                 min_to_max.push_back(left_right_difference_combination_count[i][j][3]) ;
                 sort(min_to_max.begin(), min_to_max.end());
                 C[i][j] = ( (float)min_to_max[0] * (float)min_to_max[1] ) / ( (float)min_to_max[2] * (float)min_to_max[3] );
-                
-                //C[i][j] = (float)min(E[i][j], D[i][j]) / (float)max(E[i][j], D[i][j]) ;
-                //C[i][j] = (float)min4(left_right_difference_combination_count[i][j][0], left_right_difference_combination_count[i][j][1] , left_right_difference_combination_count[i][j][2], left_right_difference_combination_count[i][j][3]) / (float)max4(left_right_difference_combination_count[i][j][0], left_right_difference_combination_count[i][j][1] , left_right_difference_combination_count[i][j][2], left_right_difference_combination_count[i][j][3]) ;
-                if (isnan(C[i][j]))
-                    printf("%2.5lf ", 0.0) ;
-                else
-                    printf("%2.5lf ", C[i][j]) ;
-                //cerr << C[i][j] << "  " ;
             }
-            cout << endl ;
         }
         
+        
+        //Quality table
         for (int i = 0; i < address_bits; i++)
         {
             Z[i] = 0 ;
@@ -436,97 +368,184 @@ int main(int argc, char* argv[]){
                 else
                     O[i]++ ;
         
-        cout << "   " ;
         for (int i = 0 ; i < address_bits; i++)
-        {
             Q[i] = (float)min(Z[i], O[i]) / (float)max(Z[i], O[i]) ;
-            if (isnan(Q[i]))
-                printf("%2.5lf ", 0.0) ;
-            else
-            printf("%2.5lf ", Q[i]) ;
-        }
-        cout << endl ;
-        cout << "   " ;
-        for (int i = 0 ; i < address_bits; i++)
-            printf("%7d ", i) ;
-        cout << endl ;
+
+
         
-        
-        while (indexing_bits.size() < set_index_length)
+        // optimize alg.
+        if (!EXHAUSTIVE)
         {
-            float largest = 0 ;
-            int index = -1 ;
-            for (int i = block_index_length; i < address_bits; i++)
+            //select bits
+            while (indexing_bits.size() < set_index_length)
             {
-                if(Q[i] > largest && !indexing_bits.count(i))
+                float largest = 0 ;
+                int index = -1 ;
+                for (int i = block_index_length; i < address_bits; i++)
                 {
-                    largest = Q[i] ;
-                    index = i ;
+                    if(Q[i] > largest && !indexing_bits.count(i))
+                    {
+                        largest = Q[i] ;
+                        index = i ;
+                    }
                 }
-            }
-            if (index == -1)
-            {
-                for (int i = block_index_length; i<address_bits && indexing_bits.size() < set_index_length; i++) {
-                    indexing_bits.insert(i) ;
+                if (index == -1)
+                {
+                    for (int i = block_index_length; i<address_bits && indexing_bits.size() < set_index_length; i++)
+                        indexing_bits.insert(i) ;
+                    break ;
                 }
-                break ;
+                
+                indexing_bits.insert(index) ;
+                Q[index] = -1 ;
+                for (int i = block_index_length; i < address_bits; i++)
+                    Q[i] *= C[index][i] ;
             }
             
-            indexing_bits.insert(index) ;
-            Q[index] = -1 ;
-            cout << index << endl ;
+            
+            set<int> tag_bits ;
+            for (int i = block_index_length ; i < address_bits ; i++)
+                if (!indexing_bits.count(i))
+                    tag_bits.insert(i) ;
+            
+
+            for (int i = 0; i < address_list.size(); i++)
+                address_list[i].set_tag_selection_optimized(set_index_length, indexing_bits, tag_index_length, tag_bits) ;
+        }
+        
+        
+        
+        
+
+        
+        
+        
+        if (EXHAUSTIVE)
+        {
+            //exhaustive method
+            vector<int> candidate_index_bits ;
+            
             for (int i = block_index_length; i < address_bits; i++)
+                for (int j = block_index_length; j < address_bits; j++)
+                    if (C[i][j] > 0 && find(candidate_index_bits.begin(), candidate_index_bits.end(), j) == candidate_index_bits.end() )
+                        candidate_index_bits.push_back(j) ;
+                        
+            
+            // add bits if there is not enough
+            for (int i = block_index_length; i<address_bits && candidate_index_bits.size() < set_index_length ; i++)
             {
-                Q[i] *= C[index][i] ;
-            }
-        }
-
-        
-        
-        
-        //vector< set<int> > candidate_index_bits ;
-        
-        //find_candidate_index_bits(&candidate_index_bits, Q, C, address_bits, block_index_length, set_index_length, set<int>index_combination) ;
-
-        
-        
-        
-        
-        
-        
-        
-        
-        //indexing_bits.insert(6) ;
-        //indexing_bits.insert(7) ;
-        //indexing_bits.insert(8) ;
-        //indexing_bits.insert(9) ;
-        //indexing_bits.insert(11) ;
-        
-        //for (set<int>::iterator it = indexing_bits.begin() ; it != indexing_bits.end() ; it++)
-        //    cout << *it <<' ' ;
-        //cout << endl ;
-
-        
-
-        set<int> tag_bits ;
-        for (int i = block_index_length ; i < address_bits ; i++)
-        {
-            if (!indexing_bits.count(i))
-            {
-                tag_bits.insert(i) ;
-            }
-        }
-        
-
-        
-        
-        
-        for (int i = 0; i < address_list.size(); i++)
-        {
-            address_list[i].set_tag_selection_optimized(set_index_length, indexing_bits, tag_index_length, tag_bits) ;
-        }
+                int largest = 0 ;
+                int temp_index = block_index_length ;
+                for (int j = block_index_length; j < address_bits; j++)
+                {
+                    if (Q[j] > largest) {
+                        largest = Q[j] ;
+                        temp_index = j ;
+                    }
+                }
+                Q[temp_index] = 0 ;
                 
-        
+                if (find(candidate_index_bits.begin(), candidate_index_bits.end(), temp_index) == candidate_index_bits.end() )
+                    candidate_index_bits.push_back(temp_index) ;
+            }
+            
+            
+            // add bits sequentially if there is still not enough
+            for (int i = block_index_length; i<address_bits && candidate_index_bits.size() < set_index_length ; i++)
+                if (find(candidate_index_bits.begin(), candidate_index_bits.end(), i) == candidate_index_bits.end() )
+                    candidate_index_bits.push_back(i) ;
+
+            
+            
+            sort(candidate_index_bits.begin(), candidate_index_bits.end()) ;
+            
+            
+            
+            
+            vector< set<int> > candidate_index_bits_combination ;
+            
+            vector<bool> v(candidate_index_bits.size());
+            fill(v.begin(), v.begin() + set_index_length, true);
+            do {
+                vector<int> temp ;
+                for (int i = 0; i < candidate_index_bits.size(); i++) {
+                    if (v[i]) {
+                        temp.push_back(candidate_index_bits[i]) ;
+                    }
+                }
+                set<int> temp_set ;
+                for (int i = 0 ; i < temp.size(); i++)
+                    temp_set.insert(temp[i]) ;
+                
+                
+                candidate_index_bits_combination.push_back(temp_set) ;
+                
+            } while (prev_permutation(v.begin(), v.end())) ;
+            
+            
+
+            
+            cache_class cache_exhaustive(associativity, cache_sets) ;
+            int exhasutive_miss_count = 0 ;
+            int exhasutive_miss_count_least = INFINITY ;
+            
+            for (int i = 0; i < candidate_index_bits_combination.size() ; i++)
+            {
+
+                exhasutive_miss_count = 0 ;
+                
+                
+                
+                set<int> tag_bits ;
+                for (int j = block_index_length ; j < address_bits ; j++)
+                    if (!candidate_index_bits_combination[i].count(j))
+                        tag_bits.insert(j) ;
+                                
+                
+                
+                for (int j = 0; j < address_list.size(); j++)
+                    address_list[j].set_tag_selection_optimized(set_index_length, candidate_index_bits_combination[i], tag_index_length, tag_bits) ;
+                
+                
+                for (int j = 0; j < address_list.size(); j++)
+                {
+                    if(!cache_exhaustive.access(address_list[j]) )
+                        exhasutive_miss_count++ ;
+
+                    if (exhasutive_miss_count > exhasutive_miss_count_least)
+                        break ;
+                }
+                
+                if (exhasutive_miss_count < exhasutive_miss_count_least)
+                {
+                    exhasutive_miss_count_least = exhasutive_miss_count ;
+                    indexing_bits = candidate_index_bits_combination[i] ;
+                }
+                
+
+                
+                for (int j = 0; j < address_list.size(); j++)
+                    address_list[j].reset() ;
+                
+                
+                cache_exhaustive.reset() ;
+                
+            }
+            
+            
+            
+            
+            
+            set<int> tag_bits ;
+            for (int i = block_index_length ; i < address_bits ; i++)
+                if (!indexing_bits.count(i))
+                    tag_bits.insert(i) ;
+            
+
+            for (int i = 0; i < address_list.size(); i++)
+                address_list[i].set_tag_selection_optimized(set_index_length, indexing_bits, tag_index_length, tag_bits) ;
+                        
+        }
         
             
     }
@@ -536,7 +555,26 @@ int main(int argc, char* argv[]){
     
     
     
-    
+    if (MANUAL)
+    {
+        
+        indexing_bits.insert(6) ;
+        indexing_bits.insert(7) ;
+        indexing_bits.insert(8) ;
+        indexing_bits.insert(9) ;
+        indexing_bits.insert(12) ;
+        
+        
+        set<int> tag_bits ;
+        for (int i = block_index_length ; i < address_bits ; i++)
+            if (!indexing_bits.count(i))
+                tag_bits.insert(i) ;
+
+        
+
+        for (int i = 0; i < address_list.size(); i++)
+            address_list[i].set_tag_selection_optimized(set_index_length, indexing_bits, tag_index_length, tag_bits) ;
+    }
     
     
     
@@ -594,7 +632,6 @@ int main(int argc, char* argv[]){
     for (int i = 0 ; i < address_list.size() ; i++)
     {
         cache.access(address_list[i]) ;
-        //cout << address_list[i].set_index_reversed << " " << address_list[i].tag_index_reversed << " " << address_list[i].set_index_reversed_dec  << " " << address_list[i].hit << endl ;
     }
     
     
@@ -653,40 +690,6 @@ int main(int argc, char* argv[]){
         cout << endl ;
         
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     return 0;
