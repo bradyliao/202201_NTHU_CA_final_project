@@ -291,7 +291,7 @@ int main(int argc, char* argv[]){
             
             address_list.push_back(current_address) ;
             address_list_optimize_process.push_back(current_address.reversed) ;
-            cout << address_list_optimize_process[address_list_optimize_process.size()-1] << endl ;
+            //cout << address_list_optimize_process[address_list_optimize_process.size()-1] << endl ;
         }
         
         read_lst.close() ;
@@ -392,18 +392,36 @@ int main(int argc, char* argv[]){
             }
         
         for (int k = 0 ; k < address_list_optimize_process.size() ; k++)
-            for (int i = 0; i < address_bits; i++)
-                for (int j = 0 ; j < address_bits; j++)
+            for (int i = block_index_length; i < address_bits; i++)
+                for (int j = block_index_length ; j < address_bits; j++)
                     if (address_list_optimize_process[k][i] != address_list_optimize_process[k][j])
                         D[i][j]++ ;
                     else
                         E[i][j]++ ;
         
         for (int i = 0; i < address_bits; i++)
+        {
+            printf("%2d ", i) ;
             for (int j = 0 ; j < address_bits; j++)
+            {
+                vector<int> min_to_max ;
+                min_to_max.push_back(left_right_difference_combination_count[i][j][0]) ;
+                min_to_max.push_back(left_right_difference_combination_count[i][j][1]) ;
+                min_to_max.push_back(left_right_difference_combination_count[i][j][2]) ;
+                min_to_max.push_back(left_right_difference_combination_count[i][j][3]) ;
+                sort(min_to_max.begin(), min_to_max.end());
+                C[i][j] = ( (float)min_to_max[0] * (float)min_to_max[1] ) / ( (float)min_to_max[2] * (float)min_to_max[3] );
+                
                 //C[i][j] = (float)min(E[i][j], D[i][j]) / (float)max(E[i][j], D[i][j]) ;
-                C[i][j] = (float)min4(left_right_difference_combination_count[i][j][0], left_right_difference_combination_count[i][j][1] , left_right_difference_combination_count[i][j][2], left_right_difference_combination_count[i][j][3]) / (float)max4(left_right_difference_combination_count[i][j][0], left_right_difference_combination_count[i][j][1] , left_right_difference_combination_count[i][j][2], left_right_difference_combination_count[i][j][3]) ;
-        
+                //C[i][j] = (float)min4(left_right_difference_combination_count[i][j][0], left_right_difference_combination_count[i][j][1] , left_right_difference_combination_count[i][j][2], left_right_difference_combination_count[i][j][3]) / (float)max4(left_right_difference_combination_count[i][j][0], left_right_difference_combination_count[i][j][1] , left_right_difference_combination_count[i][j][2], left_right_difference_combination_count[i][j][3]) ;
+                if (isnan(C[i][j]))
+                    printf("%2.5lf ", 0.0) ;
+                else
+                    printf("%2.5lf ", C[i][j]) ;
+                //cerr << C[i][j] << "  " ;
+            }
+            cout << endl ;
+        }
         
         for (int i = 0; i < address_bits; i++)
         {
@@ -412,17 +430,26 @@ int main(int argc, char* argv[]){
         }
         
         for (int k = 0 ; k < address_list_optimize_process.size() ; k++)
-            for (int i = 0; i < address_bits; i++)
+            for (int i = block_index_length; i < address_bits; i++)
                 if (address_list_optimize_process[k][i] == '0')
                     Z[i]++ ;
                 else
                     O[i]++ ;
         
+        cout << "   " ;
         for (int i = 0 ; i < address_bits; i++)
+        {
             Q[i] = (float)min(Z[i], O[i]) / (float)max(Z[i], O[i]) ;
-        
-        
-        
+            if (isnan(Q[i]))
+                printf("%2.5lf ", 0.0) ;
+            else
+            printf("%2.5lf ", Q[i]) ;
+        }
+        cout << endl ;
+        cout << "   " ;
+        for (int i = 0 ; i < address_bits; i++)
+            printf("%7d ", i) ;
+        cout << endl ;
         
         
         while (indexing_bits.size() < set_index_length)
@@ -431,21 +458,29 @@ int main(int argc, char* argv[]){
             int index = -1 ;
             for (int i = block_index_length; i < address_bits; i++)
             {
-                if(Q[i] > largest)
+                if(Q[i] > largest && !indexing_bits.count(i))
                 {
                     largest = Q[i] ;
                     index = i ;
                 }
             }
+            if (index == -1)
+            {
+                for (int i = block_index_length; i<address_bits && indexing_bits.size() < set_index_length; i++) {
+                    indexing_bits.insert(i) ;
+                }
+                break ;
+            }
+            
             indexing_bits.insert(index) ;
             Q[index] = -1 ;
+            cout << index << endl ;
             for (int i = block_index_length; i < address_bits; i++)
             {
                 Q[i] *= C[index][i] ;
             }
         }
 
-        
         
         
         
@@ -468,8 +503,8 @@ int main(int argc, char* argv[]){
         //indexing_bits.insert(11) ;
         
         //for (set<int>::iterator it = indexing_bits.begin() ; it != indexing_bits.end() ; it++)
-        //    cout << *it ;
-        
+        //    cout << *it <<' ' ;
+        //cout << endl ;
 
         
 
@@ -612,7 +647,7 @@ int main(int argc, char* argv[]){
         write_rpt.close() ;
         
         
-        cout << miss_count << endl ;
+        cout <<"miss: "<< miss_count << endl ;
         for (rit = indexing_bits.begin() ; rit != indexing_bits.end() ; rit++)
           cout << *rit << " " ;
         cout << endl ;
