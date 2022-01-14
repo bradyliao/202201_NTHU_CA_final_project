@@ -1,13 +1,11 @@
 #include <cassert>
 #include <iostream>
 #include <fstream>
-//#include <cstdio>
 #include <vector>
 #include <algorithm>
 #include <cmath>
-//#include <string>
 #include <set>
-#include <stdlib.h>
+//#include <stdlib.h>
 #include <cstdlib>
 
 
@@ -15,7 +13,7 @@ using namespace std;
 
 #define BASIC 0
 #define OPTIMIZE 1
-#define EXHAUSTIVE 1 // OPTIMIZE has to = 1
+#define EXHAUSTIVE 0 // OPTIMIZE has to = 1
 #define MANUAL 0
 
 
@@ -298,7 +296,6 @@ int main(int argc, char* argv[]){
     
     if (OPTIMIZE)
     {
-
         float C[address_bits][address_bits] ;
         int Z[address_bits] ;
         int O[address_bits] ;
@@ -491,11 +488,8 @@ int main(int argc, char* argv[]){
             
             for (int i = 0; i < candidate_index_bits_combination.size() ; i++)
             {
-
                 exhasutive_miss_count = 0 ;
-                
-                
-                
+                                
                 set<int> tag_bits ;
                 for (int j = block_index_length ; j < address_bits ; j++)
                     if (!candidate_index_bits_combination[i].count(j))
@@ -527,12 +521,9 @@ int main(int argc, char* argv[]){
                 for (int j = 0; j < address_list.size(); j++)
                     address_list[j].reset() ;
                 
-                
                 cache_exhaustive.reset() ;
                 
             }
-            
-            
             
             
             
