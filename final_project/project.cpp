@@ -13,8 +13,9 @@ using namespace std;
 
 #define BASIC 0
 #define OPTIMIZE 1
-#define EXHAUSTIVE 0 // OPTIMIZE has to = 1
+#define EXHAUSTIVE 1 // OPTIMIZE has to = 1
 #define MANUAL 0
+#define MAX_COUNT 150
 
 
 int string_to_dec(string &text, int &length)
@@ -486,7 +487,14 @@ int main(int argc, char* argv[]){
             int exhasutive_miss_count = 0 ;
             int exhasutive_miss_count_least = INFINITY ;
             
-            for (int i = 0; i < candidate_index_bits_combination.size() ; i++)
+            int loop_count ;
+            
+            if (candidate_index_bits_combination.size() > MAX_COUNT)
+                loop_count = MAX_COUNT ;
+            else
+                loop_count = candidate_index_bits_combination.size() ;
+            
+            for (int i = 0; i < loop_count ; i++)
             {
                 exhasutive_miss_count = 0 ;
                                 
